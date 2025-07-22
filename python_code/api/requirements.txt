@@ -2,6 +2,4 @@ pandas==2.0.3
 python_dotenv==1.0.1
 openai==1.50.2
 pinecone==5.3.1
-mlxtend==0.23.1
-firebase-admin==6.0.1
-google-cloud-storage==2.18.2
+runpod==1.7.1
