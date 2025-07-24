@@ -21,6 +21,7 @@ def main():
                                     os.path.join(folder_path, "recommendation_objects/apriori_recommendation.json"),
                                     os.path.join(folder_path, "recommendation_objects/popularity_recommendation.csv")
                                 )
+
     }
 
     messages = []

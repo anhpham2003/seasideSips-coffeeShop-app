@@ -1,7 +1,7 @@
 import os
 import json
 from copy import deepcopy
-from .utils import get_chatbot_response
+from .utils import get_chatbot_response, extract_json_block, check_json_output
 from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
@@ -47,6 +47,7 @@ class GuardAgent():
         input_message = [{"role": "system", "content": system_prompt}] + messages[-3:]
 
         chatbot_output = get_chatbot_response(self.client, self.model_name, input_message)
+        chatbot_output = check_json_output(self.client, self.model_name, chatbot_output)
         output = self.postprocess(chatbot_output)
 
         return output
@@ -56,7 +57,8 @@ class GuardAgent():
         Converts raw model output (JSON string) into the expected response format
         for the chatbot system.
         """
-        output = json.loads(output)
+        clean_output = extract_json_block(output)
+        output = json.loads(clean_output)
 
         dict_output = {
             "role": "assistant",

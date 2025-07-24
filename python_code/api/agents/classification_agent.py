@@ -1,7 +1,7 @@
 import os
 import json
 from copy import deepcopy
-from .utils import get_chatbot_response
+from .utils import get_chatbot_response, extract_json_block, check_json_output
 from openai import OpenAI
 from dotenv import load_dotenv
 load_dotenv()
@@ -46,7 +46,9 @@ class ClassificationAgent():
         ]
         
         input_messages += messages[-3:]
+        
         chatbot_output = get_chatbot_response(self.client, self.model_name, input_messages)
+        chatbot_output = check_json_output(self.client, self.model_name, chatbot_output)
         output = self.postprocess(chatbot_output)
 
         return output
@@ -56,7 +58,8 @@ class ClassificationAgent():
         Converts raw JSON string output into chatbot-compatible format
         with memory for routing to the correct agent.
         """
-        output = json.loads(output)
+        clean_output = extract_json_block(output)
+        output = json.loads(clean_output)
 
         dict_output = {
             "role": "assistant",

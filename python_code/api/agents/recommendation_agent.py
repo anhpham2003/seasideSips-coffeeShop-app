@@ -1,12 +1,13 @@
 from dotenv import load_dotenv
 import pandas as pd
 import os
-from .utils import get_chatbot_response, get_embedding, check_json_output
+from .utils import get_chatbot_response, get_embedding, check_json_output, extract_json_block
 from openai import OpenAI
 from copy import deepcopy
 from pinecone import Pinecone
 import json
 load_dotenv()
+from sklearn.metrics.pairwise import cosine_similarity
 
 class RecommendationAgent():
     def __init__(self, apriori_recommendation_path, popular_recommendation_path):
@@ -107,17 +108,17 @@ class RecommendationAgent():
         """ + ",".join(self.product_categories) + """
 
         Your task is to determine which type of recommendation to provide based on the user's message.
+        If the user's category does not exactly match one in the list, choose the most similar category from the list and use it.
 
-        Your output should be in a structured json format like so. Each key is a string and each value is a string. Make sure to follow the format exactly:
+        Your output should be in a structured json format like so. Each key is a string and each value is a string. ONLY return a valid JSON object as described. Do NOT include any explanation, introductory phrases, or markdown. The response must start with '{' and end with '}', with no text before or after.
         {
         "chain of thought": "Write down your critical thinking about what type of recommendation is this input relevant to.",
-        "recommendation_type": "'apriori' or 'popular' or 'popular by category'. Pick one of those and only write the word.",
-        "parameters": "This is a python list. It's either a list of of items for apriori recommendations or a list of categories for popular by category recommendations. Leave it empty for popular recommendations. Make sure to use the exact strings from the list of items and categories above."
+        "recommendation_type": 'apriori' or 'popular' or 'popular by category'. Pick one of those and only write the word.,
+        "parameters": This is a python list. It's either a list of of items for apriori recommendations or a list of categories for popular by category recommendations. Leave it empty for popular recommendations. Make sure to use the exact strings from the list of items and categories above.
         }
         """
 
         input_messages = [{"role": "system", "content": system_prompt}] + message[-3:]
-
         chatbot_response = get_chatbot_response(self.client, self.model_name,input_messages)
         chatbot_output = check_json_output(self.client, self.model_name, chatbot_response)
         output = self.postprocess_classification(chatbot_output)
@@ -128,14 +129,24 @@ class RecommendationAgent():
         """
         Parses JSON response from the model to extract recommendation type and parameters.
         """
-        output = json.loads(output)
+        clean_output = extract_json_block(output)
+        output = json.loads(clean_output)
 
+        valid_categories = set(self.product_categories)
+        parameters = output['parameters']
+
+        if output['recommendation_type'] == 'popular by category':
+            parameters = [p for p in parameters if p in valid_categories]
+            if not parameters:
+                return {
+                    "recommendation_type": 'popular',
+                    "parameters": []
+                }
         dict_output = {
             "recommendation_type": output['recommendation_type'],
-            "parameters": output['parameters']
+            "parameters": parameters
         }
-
-        return output
+        return dict_output
     
     def get_recommendations_from_order(self, messages, order):
         """
@@ -160,13 +171,14 @@ class RecommendationAgent():
 
         prompt = f"""
         {messages[-1]['content']}
-        Please recommend me those items  exactly: {recommendation_str}
+        Please recommend me those items exactly: {recommendation_str}
         """
 
         messages[-1]['content'] = prompt
         input_message =[{'role': 'system', 'content': system_prompt}] + messages[-3:]
 
         chatbot_output = get_chatbot_response(self.client, self.model_name, input_message)
+        chatbot_output = check_json_output(self.client, self.model_name, chatbot_output)
         output = self.postprocess(chatbot_output)
 
         return output
@@ -182,19 +194,19 @@ class RecommendationAgent():
         recommendation_classifcation = self.recommendation_classification(messages)
         recommendation_type = recommendation_classifcation['recommendation_type']
 
-        recommendation = []
+        recommendations = []
         if recommendation_type == 'apriori':
-            recommendation = self.get_apriori_recommendation(recommendation_classifcation['parameters'])
+            recommendations = self.get_apriori_recommendation(recommendation_classifcation['parameters'])
         elif recommendation_type == 'popular':
-            recommendation = self.get_popular_recommendation()
+            recommendations = self.get_popular_recommendation()
         elif recommendation_type == 'popular by category':
-            recommendation = self.get_popular_recommendation(recommendation_classifcation['parameters'])
+            recommendations = self.get_popular_recommendation(recommendation_classifcation['parameters'])
 
         # Fallback response if no recommendation is available
-        if not recommendation:
+        if not recommendations:
             return {'role': 'assistant', 'content': 'Sorry, I can\'t help with that. Can I help you with something else?'} 
         
-        recommendation_str = ", ".join(recommendation)
+        recommendation_str = ", ".join(recommendations)
 
         system_prompt = f"""
         You are a helpful AI assistant for a coffee shop application which serves drinks and pastries.
@@ -211,7 +223,7 @@ class RecommendationAgent():
 
         messages[-1]['content'] = prompt
 
-        input_message = [{'role': 'system', 'content': prompt}] + messages[-3:]
+        input_message = [{'role': 'system', 'content': system_prompt}] + messages[-3:]
     
         chatbot_output = get_chatbot_response(self.client, self.model_name, input_message)
         output = self.postprocess(chatbot_output)
