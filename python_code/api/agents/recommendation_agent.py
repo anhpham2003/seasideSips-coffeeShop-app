@@ -120,7 +120,7 @@ class RecommendationAgent():
 
         chatbot_response = get_chatbot_response(self.client, self.model_name,input_messages)
         chatbot_output = check_json_output(self.client, self.model_name, chatbot_response)
-        output = self.postprocess_classification(chatbot_response)
+        output = self.postprocess_classification(chatbot_output)
 
         return output
     

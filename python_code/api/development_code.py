@@ -10,6 +10,7 @@ import sys
 import pathlib
 folder_path = pathlib.Path(__file__).parent.resolve()
 
+
 def main():
     guard_agent = GuardAgent()
     classification_agent = ClassificationAgent()
@@ -53,6 +54,6 @@ def main():
         response = agent.get_response(messages)
 
         messages.append(response)
-        
+
 if __name__ == "__main__":
     main()
