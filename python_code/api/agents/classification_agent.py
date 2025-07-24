@@ -8,6 +8,7 @@ load_dotenv()
 
 class ClassificationAgent():
     def __init__(self):
+        # Initialize the OpenAI client
         self.client = OpenAI(
             api_key = os.getenv('RUNPOD_TOKEN'),
             base_url = os.getenv('RUNPOD_CHATBOT_URL')
@@ -15,6 +16,13 @@ class ClassificationAgent():
         self.model_name = os.getenv('MODEL_NAME')
 
     def get_response(self, messages):
+        """
+        Determines which specialized agent should handle the user's input.
+        The assistant classifies the message into one of:
+        - details_agent
+        - order_taking_agent
+        - recommendation_agent
+        """
         messages = deepcopy(messages)
 
         system_prompt = """
@@ -44,7 +52,10 @@ class ClassificationAgent():
         return output
     
     def postprocess(self, output):
-
+        """
+        Converts raw JSON string output into chatbot-compatible format
+        with memory for routing to the correct agent.
+        """
         output = json.loads(output)
 
         dict_output = {

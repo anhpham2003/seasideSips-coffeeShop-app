@@ -8,6 +8,7 @@ load_dotenv()
 
 class GuardAgent():
     def __init__(self):
+        # Initialize the OpenAI client
         self.client = OpenAI(
             api_key=os.getenv('RUNPOD_TOKEN'),
             base_url=os.getenv('RUNPOD_CHATBOT_URL')
@@ -15,6 +16,10 @@ class GuardAgent():
         self.model_name = os.getenv('MODEL_NAME')
     
     def get_response(self, messages):
+        """
+        Determines if the user's message is relevant to the coffee shop.
+        Returns a structured response indicating if the input is 'allowed' or 'not allowed'.
+        """
         messages = deepcopy(messages)
 
         system_prompt = """
@@ -47,6 +52,10 @@ class GuardAgent():
         return output
     
     def postprocess(self, output):
+        """
+        Converts raw model output (JSON string) into the expected response format
+        for the chatbot system.
+        """
         output = json.loads(output)
 
         dict_output = {
