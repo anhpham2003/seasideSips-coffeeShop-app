@@ -13,6 +13,15 @@ Seaside Sips is a full-stack AI-powered coffee shop experience that uses a multi
 - 🛡️ **Modular Agent Design**: Each agent is isolated and follows the `AgentProtocol` interface
 
 ---
+### 🧠 Agent Overview
+| Agent                 | Purpose                                   |
+| --------------------- | ----------------------------------------- |
+| `GuardAgent`          | Filters inappropriate or irrelevant input |
+| `ClassificationAgent` | Chooses the correct agent to handle input |
+| `OrderTakingAgent`    | Collects and validates user orders        |
+| `RecommendationAgent` | Suggests items using Apriori/popularity   |
+| `DetailsAgent`        | Pulls item descriptions via Pinecone      |
+
 
 ## 🛠️ Tech Stack
 
@@ -26,10 +35,13 @@ Seaside Sips is a full-stack AI-powered coffee shop experience that uses a multi
 | ML Techniques    | Apriori Algorithm (for recommendations)  |
 | Env Management   | `dotenv`, Conda                          |
 
+Python • OpenAI API (via RunPod) • Pinecone • Firebase • React.js
+Apriori Algorithm • dotenv • Vector Search • LLM-Orchestrated Agents
+
 ---
 
 ## 📂 Project Structure
-
+```bash
 latte_chat/
 │
 ├── python_code/
@@ -48,7 +60,7 @@ latte_chat/
 │
 ├── frontend/ # React app (in progress)
 └── README.md
-
+```
 ---
 
 ## 🚀 Getting Started
@@ -66,21 +78,25 @@ conda create -n seaside-sips python=3.10
 conda activate seaside-sips
 pip install -r requirements.txt
 ```
+### 3. Install required packages:
+```
+pip install -r requirements.txt
+```
 
-### 3. Add an env. file
+### 4. Add an env. file
 ```
 RUNPOD_TOKEN=your_runpod_api_key
 RUNPOD_CHATBOT_URL=your_chatbot_url
 MODEL_NAME=meta-llama-3-8b-instruct
 ```
 
-### 4. Run backend code
+### 5. Run backend code
 ```
 cd python_code
 python api/development_code.py
 ```
 
-### 5. Example output:
+### Example output:
 ```
 User: I want to order a latte
 Bot: Great choice! You've ordered 1 Latte. Would you like to add anything else?
@@ -93,3 +109,9 @@ Bot: You've ordered a Latte and a Chocolate Croissant.
       • Sugar Free Vanilla Syrup: A sweet and creamy addition
       • Croissant: Flaky and buttery treat
 ```
+### 📝 TODO
+ Finalize and deploy the frontend
+
+ Add user authentication
+
+ Improve error handling and fallback responses
